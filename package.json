@@ -4,15 +4,17 @@
   "description": "A human resource management backend",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch --env-file=.env --loader ts-node/esm ./src/index.ts"
+    "dev": "node --watch --env-file=.env -r ts-node/register src/index.ts"
   },
   "keywords": [],
   "author": "Bui Ta Thien An",
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
-  "type": "module",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.25"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
