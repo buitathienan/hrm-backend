@@ -1,4 +1,3 @@
-// index.js
 import express from "express";
 import { AppDataSource } from "./config/data-source";
 const app = express();
