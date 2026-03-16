@@ -1,0 +1,236 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/prisma/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  PREFER_NOT_TO_SAY
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+  FREELANCE
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  TERMINATED
+  RESIGNED
+  RETIRED
+}
+
+enum Role {
+  EMPLOYEE
+  HR
+  ADMIN
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  ABSENT
+  PRESENT
+  WORK_FROM_HOME
+  ON_LEAVE
+}
+enum NotificationType {
+  LEAVE_REQUEST
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  PAYROLL_PROCESSED
+  BIRTHDAY
+  WORK_ANNIVERSARY
+  PERFORMANCE_REVIEW
+  RECRUITMENT
+  GENERAL
+}
+
+model Department {
+  id String @id @default(uuid())
+  name String 
+  description String?
+  employees Employee[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Designation {
+  id String @id @default(uuid())
+  name String
+  description String?
+  employees Employee[]
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Employee {
+  id String @id @default(uuid())
+  employeeCode String @unique
+  firstName String
+  lastName String
+  dateOfBirth DateTime?
+  email String? @unique
+  phone String?
+  gender Gender?
+  profilePhoto String?
+  address String?
+  employmentType EmploymentType @default(FULL_TIME)
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  joiningDate DateTime
+  emergencyContactName String?
+  emergencyContactPhone String?
+
+  departmentId String? 
+  department Department? @relation(fields: [departmentId], references: [id])
+  managerId String?
+  manager Employee? @relation("EmployeeManager", fields: [managerId], references: [id])
+  subordinates Employee[] @relation("EmployeeManager")
+  designationId String?
+  designation Designation? @relation(fields: [designationId], references: [id])
+  userId String? @unique
+  user User? @relation(fields: [userId], references: [id])
+  leaveAllocation LeaveAllocation[]
+  leaveRequests LeaveRequest[]
+  approvedLeaves LeaveRequest[] @relation("LeaveApprover")
+  attendances Attendance[]
+  shiftSchedule ShiftSchedule?
+  notifications Notification[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  passwordHash String
+  role Role
+  isActive Boolean @default(true)
+  employee Employee?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model LeaveType {
+  id String @id @default(uuid())
+  name String 
+  description String?
+  maxDayPerYear Int
+  isPaid Boolean @default(true)
+  isCarryForward Boolean @default(false)
+  maxCarryForward Int?
+  requiresApproval Boolean @default(true)
+  allocations LeaveAllocation[]
+  leaveRequests LeaveRequest[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LeaveAllocation {
+  id String @id @default(uuid())
+  leaveTypeId String
+  employeeId String
+  year Int
+  allocatedDays Int
+  usedDays Float @default(0)
+  carryForward Float @default(0)
+  employee Employee @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id String @id @default(uuid())
+  leaveTypeId String
+  employeeId String
+  startDate DateTime
+  endDate DateTime
+  totalDays Float
+  reason String?
+  status LeaveStatus
+  approvedById String?
+  approvedBy     Employee? @relation("LeaveApprover", fields: [approvedById], references: [id])
+  approvedAt DateTime?
+  rejectedReason String?
+  employee Employee @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Attendance {
+  id String @id @default(uuid())
+  employeeId String
+  employee Employee @relation(fields: [employeeId], references: [id])
+  date DateTime @db.Date
+  checkIn DateTime?
+  checkOut DateTime?
+  hoursWorked Float?
+  overtimeHours Float? @default(0)
+  status AttendanceStatus @default(PRESENT)
+  notes String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Shift {
+  id String @id @default(uuid())
+  name String
+  startTime String 
+  endTime String
+  workDays String[]
+  description String?
+  schedules ShiftSchedule[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ShiftSchedule {
+  id String @id @default(uuid())
+  employeeId String @unique
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shiftId String
+  shift Shift @relation(fields: [shiftId], references: [id])
+  startDate DateTime
+  endDate DateTime?
+   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id String @id @default(uuid())
+  employeeId String
+  employee Employee @relation(fields: [employeeId], references: [id])
+  type NotificationType
+  title String
+  message String
+  isRead Boolean @default(false)
+  readAt DateTime?
+  link String?
+  createdAt DateTime @default(now())
+}
